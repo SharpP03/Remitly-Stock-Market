@@ -6,19 +6,13 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
 import remitly.stockmarket.dto.StockDTO;
-import remitly.stockmarket.model.Stock;
-import remitly.stockmarket.repository.StockRepository;
-import remitly.stockmarket.service.StockService;
 import remitly.stockmarket.service.WalletService;
-import remitly.stockmarket.type.TradeType;
 
 @RestController
 public class StockController {
-    private final StockService stockService;
     private final WalletService walletService;
 
-    public StockController(StockService stockService, WalletService walletService) {
-        this.stockService = stockService;
+    public StockController(WalletService walletService) {
         this.walletService = walletService;
     }
 
