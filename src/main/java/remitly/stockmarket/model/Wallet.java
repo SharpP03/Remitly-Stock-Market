@@ -4,6 +4,7 @@ import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.util.ArrayList;
 import java.util.List;
 
 @Entity
@@ -15,5 +16,5 @@ public class Wallet {
     private Long id;
 
     @OneToMany(mappedBy = "wallet")
-    List<WalletPosition> positions;
+    private List<WalletPosition> positions = new ArrayList<>();
 }
