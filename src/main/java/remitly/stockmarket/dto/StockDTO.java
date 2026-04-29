@@ -1,8 +1,7 @@
 package remitly.stockmarket.dto;
 
-import jakarta.validation.Valid;
-import jakarta.validation.constraints.Min;
-import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Positive;
 import lombok.Getter;
 import lombok.Setter;
 import remitly.stockmarket.type.TradeType;
@@ -11,10 +10,9 @@ import remitly.stockmarket.type.TradeType;
 @Setter
 public class StockDTO {
 
-    @NotBlank
-    @Min(0)
+    @Positive(message = "Quantity must be greater than 0")
     private int quantity = 1;
 
-    @NotBlank
+    @NotNull(message = "Trade type is required")
     private TradeType type;
 }

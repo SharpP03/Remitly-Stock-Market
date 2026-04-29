@@ -1,6 +1,8 @@
 package remitly.stockmarket.model;
 
 import jakarta.persistence.*;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Positive;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -25,6 +27,8 @@ public class WalletPosition {
     @JoinColumn(name = "stock_id", nullable = false)
     private Stock stock;
 
+    @NotNull
+    @Positive
     @Column(nullable = false)
     private Integer quantity;
 }
