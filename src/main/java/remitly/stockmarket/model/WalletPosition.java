@@ -26,5 +26,5 @@ public class WalletPosition {
     private Stock stock;
 
     @Column(nullable = false)
-    private int quantity;
+    private Integer quantity;
 }
