@@ -1,11 +1,10 @@
 package remitly.stockmarket.controller;
 
+import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 import remitly.stockmarket.dto.StockDTO;
+import remitly.stockmarket.dto.response.WalletDTO;
 import remitly.stockmarket.service.WalletService;
 
 @RestController
@@ -20,11 +19,16 @@ public class StockController {
     public ResponseEntity<Void> trade(
             @PathVariable Long walletId,
             @PathVariable String stockName,
-            @RequestBody StockDTO stockDTO
+            @Valid  @RequestBody StockDTO stockDTO
     ){
         walletService.trade(walletId,stockName,stockDTO);
 
         return ResponseEntity.ok().build();
+    }
+
+    @GetMapping("/wallets/{walletId}")
+    public ResponseEntity<WalletDTO> getWallet(@PathVariable Long walletId) {
+        return ResponseEntity.ok(walletService.getWallet(walletId));
     }
 
 }
