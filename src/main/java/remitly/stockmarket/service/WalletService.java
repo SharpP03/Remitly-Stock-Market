@@ -20,6 +20,7 @@ public class WalletService {
     private final WalletRepository walletRepository;
     private final StockService stockService;
     private final WalletPositionRepository walletPositionRepository;
+    private final AuditLogService auditLogService;
 
     @Transactional
     public void trade(Long walletId, String stockName, StockDTO stockDTO) {
@@ -32,6 +33,8 @@ public class WalletService {
             case BUY -> buy(wallet, stock, position);
             case SELL -> sell(stock, position);
         }
+
+        auditLogService.logSuccessfulTrade(stockDTO.getType(), wallet.getId(), stock.getName());
     }
 
     private void buy(Wallet wallet, Stock stock, WalletPosition position) {
