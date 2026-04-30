@@ -6,6 +6,9 @@ import org.springframework.stereotype.Service;
 import remitly.stockmarket.dto.StockDTO;
 import remitly.stockmarket.dto.response.WalletDTO;
 import remitly.stockmarket.dto.response.WalletStockDTO;
+import remitly.stockmarket.exception.NoStockException;
+import remitly.stockmarket.exception.NoWalletException;
+import remitly.stockmarket.exception.NotEnoughStockException;
 import remitly.stockmarket.model.Stock;
 import remitly.stockmarket.model.Wallet;
 import remitly.stockmarket.model.WalletPosition;
@@ -23,49 +26,51 @@ public class WalletService {
 
     @Transactional
     public void trade(Long walletId, String stockName, StockDTO stockDTO) {
-        if (stockDTO == null || stockDTO.getType() == null) { // TODO: validator
-            throw new IllegalArgumentException("Trade type is required");
-        }
-        if (stockDTO.getQuantity() <= 0) {
-            throw new IllegalArgumentException("Quantity must be greater than 0");
-        }
-
         Wallet wallet = walletRepository.findById(walletId)
-                .orElseThrow(() -> new IllegalArgumentException("Wallet not found")); //TODO: should be created
+                .orElseThrow(() -> new NoWalletException(walletId));
         Stock stock = stockRepository.findByName(stockName)
-                .orElseThrow(() -> new IllegalArgumentException("Stock not found"));
+                .orElseThrow(() -> new NoStockException(stockName));
         WalletPosition position = walletPositionRepository.findByWalletAndStock(wallet, stock).orElse(null);
 
-        if (stockDTO.getType() == TradeType.BUY) {
-            if (position == null) {
-                WalletPosition newPosition = new WalletPosition();
-                newPosition.setWallet(wallet);
-                newPosition.setStock(stock);
-                newPosition.setQuantity(stockDTO.getQuantity());
-                walletPositionRepository.save(newPosition);
-            } else {
-                position.setQuantity(position.getQuantity() + stockDTO.getQuantity());
-                walletPositionRepository.save(position);
-            }
-
-        } else if (stockDTO.getType() == TradeType.SELL) {
-            if (position == null || position.getQuantity() < stockDTO.getQuantity()) {
-                throw new IllegalArgumentException("Not enough stock quantity to sell");
-            }
-            int remainingQuantity = position.getQuantity() - stockDTO.getQuantity();
-            if (remainingQuantity == 0) {
-                walletPositionRepository.delete(position);
-            } else {
-                position.setQuantity(remainingQuantity);
-                walletPositionRepository.save(position);
-            }
+        switch (stockDTO.getType()) {
+            case BUY -> buy(wallet, stock, position, stockDTO.getQuantity());
+            case SELL -> sell(position, stockDTO.getQuantity());
         }
+    }
+
+    private void buy(Wallet wallet, Stock stock, WalletPosition position, int quantity) {
+        if (position == null) {
+            WalletPosition newPosition = new WalletPosition();
+            newPosition.setWallet(wallet);
+            newPosition.setStock(stock);
+            newPosition.setQuantity(quantity);
+            walletPositionRepository.save(newPosition);
+            return;
+        }
+
+        position.setQuantity(position.getQuantity() + quantity);
+        walletPositionRepository.save(position);
+    }
+
+    private void sell(WalletPosition position, int quantity) {
+        if (position == null || position.getQuantity() < quantity) {
+            throw new NotEnoughStockException();
+        }
+
+        int remainingQuantity = position.getQuantity() - quantity;
+        if (remainingQuantity == 0) {
+            walletPositionRepository.delete(position);
+            return;
+        }
+
+        position.setQuantity(remainingQuantity);
+        walletPositionRepository.save(position);
     }
 
     @Transactional
     public WalletDTO getWallet(Long walletId) {
         Wallet wallet = walletRepository.findByIdWithPositions(walletId)
-                .orElseThrow(() -> new IllegalArgumentException("Wallet not found"));
+                .orElseThrow(() -> new NoWalletException(walletId));
 
         WalletDTO walletDTO = new WalletDTO();
         walletDTO.setId(wallet.getId());
