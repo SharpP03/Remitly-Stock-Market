@@ -2,15 +2,15 @@ package remitly.stockmarket.model;
 
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
-import jakarta.validation.constraints.PositiveOrZero;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 
 @Entity
 @Getter
 @Setter
+@NoArgsConstructor
 public class Stock {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -20,8 +20,7 @@ public class Stock {
     @Column(unique = true, nullable = false)
     private String name;
 
-    @NotNull
-    @PositiveOrZero
-    @Column(nullable = false)
-    private Integer quantity;
+    public Stock(String name) {
+        this.name = name;
+    }
 }
