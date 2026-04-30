@@ -6,65 +6,64 @@ import org.springframework.stereotype.Service;
 import remitly.stockmarket.dto.StockDTO;
 import remitly.stockmarket.dto.response.WalletDTO;
 import remitly.stockmarket.dto.response.WalletStockDTO;
-import remitly.stockmarket.exception.NoStockException;
 import remitly.stockmarket.exception.NoWalletException;
 import remitly.stockmarket.exception.NotEnoughStockException;
 import remitly.stockmarket.model.Stock;
 import remitly.stockmarket.model.Wallet;
 import remitly.stockmarket.model.WalletPosition;
-import remitly.stockmarket.repository.StockRepository;
 import remitly.stockmarket.repository.WalletPositionRepository;
 import remitly.stockmarket.repository.WalletRepository;
-import remitly.stockmarket.type.TradeType;
 
 @AllArgsConstructor
 @Service
 public class WalletService {
     private final WalletRepository walletRepository;
-    private final StockRepository stockRepository;
+    private final StockService stockService;
     private final WalletPositionRepository walletPositionRepository;
 
     @Transactional
     public void trade(Long walletId, String stockName, StockDTO stockDTO) {
         Wallet wallet = walletRepository.findById(walletId)
-                .orElseThrow(() -> new NoWalletException(walletId));
-        Stock stock = stockRepository.findByName(stockName)
-                .orElseThrow(() -> new NoStockException(stockName));
+                .orElseGet(() -> walletRepository.save(new Wallet(walletId)));
+        Stock stock = stockService.getExistingStock(stockName);
         WalletPosition position = walletPositionRepository.findByWalletAndStock(wallet, stock).orElse(null);
 
         switch (stockDTO.getType()) {
-            case BUY -> buy(wallet, stock, position, stockDTO.getQuantity());
-            case SELL -> sell(position, stockDTO.getQuantity());
+            case BUY -> buy(wallet, stock, position);
+            case SELL -> sell(stock, position);
         }
     }
 
-    private void buy(Wallet wallet, Stock stock, WalletPosition position, int quantity) {
+    private void buy(Wallet wallet, Stock stock, WalletPosition position) {
+        stockService.sellOneStockToWallet(stock);
+
         if (position == null) {
             WalletPosition newPosition = new WalletPosition();
             newPosition.setWallet(wallet);
             newPosition.setStock(stock);
-            newPosition.setQuantity(quantity);
+            newPosition.setQuantity(1);
             walletPositionRepository.save(newPosition);
             return;
         }
 
-        position.setQuantity(position.getQuantity() + quantity);
+        position.setQuantity(position.getQuantity() + 1);
         walletPositionRepository.save(position);
     }
 
-    private void sell(WalletPosition position, int quantity) {
-        if (position == null || position.getQuantity() < quantity) {
+    private void sell(Stock stock, WalletPosition position) {
+        if (position == null || position.getQuantity() <= 0) {
             throw new NotEnoughStockException();
         }
 
-        int remainingQuantity = position.getQuantity() - quantity;
+        int remainingQuantity = position.getQuantity() - 1;
         if (remainingQuantity == 0) {
             walletPositionRepository.delete(position);
-            return;
+        } else {
+            position.setQuantity(remainingQuantity);
+            walletPositionRepository.save(position);
         }
 
-        position.setQuantity(remainingQuantity);
-        walletPositionRepository.save(position);
+        stockService.buyOneStockFromWallet(stock);
     }
 
     @Transactional
