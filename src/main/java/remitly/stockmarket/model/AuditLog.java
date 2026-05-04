@@ -20,12 +20,12 @@ public class AuditLog {
     private TradeType type;
 
     @Column(name = "wallet_id", nullable = false)
-    private Long walletId;
+    private String walletId;
 
     @Column(name = "stock_name", nullable = false)
     private String stockName;
 
-    public AuditLog(TradeType type, Long walletId, String stockName) {
+    public AuditLog(TradeType type, String walletId, String stockName) {
         this.type = type;
         this.walletId = walletId;
         this.stockName = stockName;

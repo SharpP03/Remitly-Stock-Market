@@ -25,18 +25,26 @@ public class StockController {
 
     @PostMapping("/wallets/{walletId}/stocks/{stockName}")
     public ResponseEntity<Void> trade(
-            @PathVariable Long walletId,
+            @PathVariable String walletId,
             @PathVariable String stockName,
-            @Valid  @RequestBody StockDTO stockDTO
-    ){
-        walletService.trade(walletId,stockName,stockDTO);
+            @Valid @RequestBody StockDTO stockDTO
+    ) {
+        walletService.trade(walletId, stockName, stockDTO);
 
         return ResponseEntity.ok().build();
     }
 
     @GetMapping("/wallets/{walletId}")
-    public ResponseEntity<WalletDTO> getWallet(@PathVariable Long walletId) {
+    public ResponseEntity<WalletDTO> getWallet(@PathVariable String walletId) {
         return ResponseEntity.ok(walletService.getWallet(walletId));
+    }
+
+    @GetMapping("/wallets/{walletId}/stocks/{stockName}")
+    public ResponseEntity<Integer> getWalletStockQuantity(
+            @PathVariable String walletId,
+            @PathVariable String stockName
+    ) {
+        return ResponseEntity.ok(walletService.getStockQuantity(walletId, stockName));
     }
 
     @GetMapping("/stocks")

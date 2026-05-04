@@ -43,7 +43,7 @@ public class StockService {
 
     @Transactional
     public void setStocks(StocksDTO stocksDTO) {
-        Bank bank = getOrCreateBank();
+        Bank bank = getOrCreateBankForUpdate();
         Set<String> stockNames = new HashSet<>();
 
         bankStockRepository.deleteByBank(bank);
@@ -61,12 +61,13 @@ public class StockService {
     }
 
     public Stock getExistingStock(String stockName) {
-        return stockRepository.findByName(stockName)
-                .orElseThrow(() -> new NoStockException(stockName));
+        String normalizedStockName = stockName.trim();
+        return stockRepository.findByName(normalizedStockName)
+                .orElseThrow(() -> new NoStockException(normalizedStockName));
     }
 
     public void sellOneStockToWallet(Stock stock) {
-        BankStock bankStock = getBankStock(stock);
+        BankStock bankStock = getBankStockForUpdate(stock);
         if (bankStock.getQuantity() <= 0) {
             throw new NoBankStockException(stock.getName());
         }
@@ -76,8 +77,8 @@ public class StockService {
     }
 
     public void buyOneStockFromWallet(Stock stock) {
-        Bank bank = getOrCreateBank();
-        BankStock bankStock = bankStockRepository.findByBankAndStock(bank, stock)
+        Bank bank = getOrCreateBankForUpdate();
+        BankStock bankStock = bankStockRepository.findByBankAndStockForUpdate(bank, stock)
                 .orElseGet(() -> new BankStock(bank, stock, 0));
 
         bankStock.setQuantity(bankStock.getQuantity() + 1);
@@ -89,9 +90,14 @@ public class StockService {
                 .orElseGet(() -> bankRepository.save(new Bank(Bank.DEFAULT_ID)));
     }
 
-    private BankStock getBankStock(Stock stock) {
-        Bank bank = getOrCreateBank();
-        return bankStockRepository.findByBankAndStock(bank, stock)
+    private Bank getOrCreateBankForUpdate() {
+        return bankRepository.findByIdForUpdate(Bank.DEFAULT_ID)
+                .orElseGet(() -> bankRepository.saveAndFlush(new Bank(Bank.DEFAULT_ID)));
+    }
+
+    private BankStock getBankStockForUpdate(Stock stock) {
+        Bank bank = getOrCreateBankForUpdate();
+        return bankStockRepository.findByBankAndStockForUpdate(bank, stock)
                 .orElseThrow(() -> new NoBankStockException(stock.getName()));
     }
 }

@@ -17,7 +17,7 @@ public class AuditLogService {
     private final AuditLogRepository auditLogRepository;
 
     @Transactional
-    public void logSuccessfulTrade(TradeType type, Long walletId, String stockName) {
+    public void logSuccessfulTrade(TradeType type, String walletId, String stockName) {
         auditLogRepository.save(new AuditLog(type, walletId, stockName));
     }
 
@@ -28,7 +28,7 @@ public class AuditLogService {
                 .map(log -> {
                     AuditLogEntryDTO dto = new AuditLogEntryDTO();
                     dto.setType(log.getType().name().toLowerCase(Locale.ROOT));
-                    dto.setWalletId(String.valueOf(log.getWalletId()));
+                    dto.setWalletId(log.getWalletId());
                     dto.setStockName(log.getStockName());
                     return dto;
                 })

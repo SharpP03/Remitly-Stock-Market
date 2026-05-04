@@ -23,11 +23,11 @@ public class WalletService {
     private final AuditLogService auditLogService;
 
     @Transactional
-    public void trade(Long walletId, String stockName, StockDTO stockDTO) {
-        Wallet wallet = walletRepository.findById(walletId)
-                .orElseGet(() -> walletRepository.save(new Wallet(walletId)));
+    public void trade(String walletId, String stockName, StockDTO stockDTO) {
+        Wallet wallet = walletRepository.findByIdForUpdate(walletId)
+                .orElseGet(() -> walletRepository.saveAndFlush(new Wallet(walletId)));
         Stock stock = stockService.getExistingStock(stockName);
-        WalletPosition position = walletPositionRepository.findByWalletAndStock(wallet, stock).orElse(null);
+        WalletPosition position = walletPositionRepository.findByWalletAndStockForUpdate(wallet, stock).orElse(null);
 
         switch (stockDTO.getType()) {
             case BUY -> buy(wallet, stock, position);
@@ -70,7 +70,7 @@ public class WalletService {
     }
 
     @Transactional
-    public WalletDTO getWallet(Long walletId) {
+    public WalletDTO getWallet(String walletId) {
         Wallet wallet = walletRepository.findByIdWithPositions(walletId)
                 .orElseThrow(() -> new NoWalletException(walletId));
 
@@ -86,5 +86,16 @@ public class WalletService {
                 .toList());
 
         return walletDTO;
+    }
+
+    @Transactional
+    public int getStockQuantity(String walletId, String stockName) {
+        Wallet wallet = walletRepository.findById(walletId)
+                .orElseThrow(() -> new NoWalletException(walletId));
+        Stock stock = stockService.getExistingStock(stockName);
+
+        return walletPositionRepository.findByWalletAndStock(wallet, stock)
+                .map(WalletPosition::getQuantity)
+                .orElse(0);
     }
 }

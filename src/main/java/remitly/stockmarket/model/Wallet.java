@@ -14,12 +14,12 @@ import java.util.List;
 @NoArgsConstructor
 public class Wallet {
     @Id
-    private Long id;
+    private String id;
 
     @OneToMany(mappedBy = "wallet")
     private List<WalletPosition> positions = new ArrayList<>();
 
-    public Wallet(Long id) {
+    public Wallet(String id) {
         this.id = id;
     }
 }

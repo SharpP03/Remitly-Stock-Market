@@ -9,6 +9,6 @@ import java.util.List;
 @Getter
 @Setter
 public class WalletDTO {
-    private Long id;
+    private String id;
     private List<WalletStockDTO> stocks = new ArrayList<>();
 }
