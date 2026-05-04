@@ -1,0 +1,55 @@
+services:
+  postgres:
+    image: postgres:18-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${DB_NAME:-stockmarket}
+      POSTGRES_USER: ${DB_USER:-admin}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-admin}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-admin} -d ${DB_NAME:-stockmarket}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  app1:
+    build: .
+    restart: unless-stopped
+    environment:
+      SERVER_PORT: 8080
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/${DB_NAME:-stockmarket}
+      DB_USER: ${DB_USER:-admin}
+      DB_PASSWORD: ${DB_PASSWORD:-admin}
+      CHAOS_ENABLED: "true"
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  app2:
+    build: .
+    restart: unless-stopped
+    environment:
+      SERVER_PORT: 8080
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/${DB_NAME:-stockmarket}
+      DB_USER: ${DB_USER:-admin}
+      DB_PASSWORD: ${DB_PASSWORD:-admin}
+      CHAOS_ENABLED: "true"
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  load-balancer:
+    image: haproxy:3.0-alpine
+    restart: unless-stopped
+    ports:
+      - "${APP_PORT:-8080}:8080"
+    volumes:
+      - ./deploy/haproxy.cfg:/usr/local/etc/haproxy/haproxy.cfg:ro
+    depends_on:
+      - app1
+      - app2
+
+volumes:
+  postgres_data:
